@@ -143,26 +143,6 @@ backend/
 
 ---
 
-## Despliegue
-
-### Render
-
-1. Crear un nuevo **Web Service** en Render
-2. Conectar el repositorio (rama `main`)
-3. **Build Command:** `pip install -r requirements.txt`
-4. **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-5. Agregar variables de entorno desde `.env.example`
-6. Ejecutar `python seed.py` una vez desplegado (Render Shell)
-
-### Railway
-
-1. Conectar el repositorio a Railway
-2. Railway detectará automáticamente `requirements.txt`
-3. Agregar las variables de entorno
-4. Ejecutar `python seed.py` desde Railway Shell después del despliegue
-
----
-
 ## Licencia
 
-Proyecto académico — Prueba técnica Monitoring Innovation.
+Proyecto — Prueba técnica Monitoring Innovation.
