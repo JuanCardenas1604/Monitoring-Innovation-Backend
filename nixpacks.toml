@@ -1,0 +1,11 @@
+[variables]
+SECRET_KEY = "change-me-in-production"
+DATABASE_URL = "sqlite:///./monitoring_innovation.db"
+ACCESS_TOKEN_EXPIRE_MINUTES = "30"
+DEBUG = "false"
+
+[phases.setup]
+nixPkgs = ["python3", "uvicorn"]
+
+[deploy]
+command = "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
