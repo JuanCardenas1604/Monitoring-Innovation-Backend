@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # CORS — en Railway: https://tu-frontend.vercel.app o varias separadas por coma
-    CORS_ORIGINS: list[str] = ["*"]
+    # CORS — en Railway: valor plano (https://x.com o varias separadas por coma)
+    CORS_ORIGINS: str = "*"
 
     # SMTP (opcional)
     SMTP_HOST: str = ""
@@ -50,15 +50,10 @@ class Settings(BaseSettings):
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
-    def parse_cors_origins(cls, value: Any) -> list[str]:
+    def parse_cors_origins(cls, value: Any) -> str:
         if value is None or value == "":
-            return ["*"]
-        if isinstance(value, str):
-            stripped = value.strip()
-            if stripped == "*":
-                return ["*"]
-            return [origin.strip() for origin in stripped.split(",") if origin.strip()]
-        return value
+            return "*"
+        return str(value)
 
     @model_validator(mode="after")
     def ensure_secret_key(self) -> "Settings":
@@ -78,6 +73,13 @@ class Settings(BaseSettings):
     @property
     def smtp_configured(self) -> bool:
         return bool(self.SMTP_HOST and self.SMTP_USERNAME and self.SMTP_PASSWORD)
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        value = self.CORS_ORIGINS.strip()
+        if value == "*":
+            return ["*"]
+        return [origin.strip() for origin in value.split(",") if origin.strip()]
 
 
 settings = Settings()
