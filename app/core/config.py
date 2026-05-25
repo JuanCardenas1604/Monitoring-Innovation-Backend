@@ -27,13 +27,19 @@ class Settings(BaseSettings):
     # CORS — en Railway: valor plano (https://x.com o varias separadas por coma)
     CORS_ORIGINS: str = "*"
 
-    # SMTP (opcional)
+    # Email — en Railway usar Resend (HTTPS); Gmail SMTP suele estar bloqueado
+    RESEND_API_KEY: str = ""
+    # Con onboarding@resend.dev solo puedes enviar al email de tu cuenta Resend
+    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
+
+    # SMTP (solo desarrollo local; puertos 587/465 bloqueados en muchos PaaS)
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
     SMTP_FROM_NAME: str = "Monitoring Innovation"
+    SMTP_TIMEOUT_SECONDS: int = 15
     FRONTEND_URL: str = "http://localhost:5173"
     PASSWORD_HISTORY_LIMIT: int = 5
 
@@ -71,8 +77,29 @@ class Settings(BaseSettings):
         return self.DATABASE_URL.startswith("sqlite")
 
     @property
+    def resend_configured(self) -> bool:
+        return bool(self.RESEND_API_KEY)
+
+    @property
     def smtp_configured(self) -> bool:
-        return bool(self.SMTP_HOST and self.SMTP_USERNAME and self.SMTP_PASSWORD)
+        return bool(
+            self.SMTP_HOST
+            and self.SMTP_USERNAME
+            and self.SMTP_PASSWORD
+            and self.SMTP_FROM_EMAIL
+        )
+
+    @property
+    def email_configured(self) -> bool:
+        return self.resend_configured or self.smtp_configured
+
+    @property
+    def email_from_address(self) -> str:
+        if self.RESEND_FROM_EMAIL:
+            return self.RESEND_FROM_EMAIL
+        if self.SMTP_FROM_EMAIL:
+            return self.SMTP_FROM_EMAIL
+        return "onboarding@resend.dev"
 
     @property
     def cors_origins_list(self) -> list[str]:

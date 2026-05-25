@@ -1,11 +1,17 @@
+import json
 import logging
 import smtplib
+import urllib.error
+import urllib.request
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+SMTP_TIMEOUT = settings.SMTP_TIMEOUT_SECONDS
+RESEND_API_URL = "https://api.resend.com/emails"
 
 RESET_TEMPLATE = """\
 <!DOCTYPE html>
@@ -61,11 +67,6 @@ RESET_TEMPLATE = """\
 </body>
 </html>"""
 
-
-def _smtp_configured() -> bool:
-    return settings.smtp_configured
-
-
 NOTIFICATION_TEMPLATE = """\
 <!DOCTYPE html>
 <html>
@@ -107,42 +108,115 @@ NOTIFICATION_TEMPLATE = """\
 </html>"""
 
 
-def _send_email(to_email: str, subject: str, html: str) -> None:
-    if not _smtp_configured():
-        logger.info("=" * 60)
-        logger.info("SMTP no configurado — correo no enviado:")
-        logger.info("  Para:     %s", to_email)
-        logger.info("  Asunto:   %s", subject)
-        logger.info("=" * 60)
-        return
+def _from_header() -> str:
+    name = settings.SMTP_FROM_NAME or settings.APP_NAME
+    return f"{name} <{settings.email_from_address}>"
 
+
+def _log_email_fallback(to_email: str, subject: str, reset_url: str | None = None) -> None:
+    logger.warning("=" * 60)
+    logger.warning("Email no configurado o falló — correo NO enviado:")
+    logger.warning("  Para:     %s", to_email)
+    logger.warning("  Asunto:   %s", subject)
+    if reset_url:
+        logger.warning("  Enlace:   %s", reset_url)
+    logger.warning("=" * 60)
+    if settings.DEBUG and reset_url:
+        print(f"\n[EMAIL] Para: {to_email}\n[EMAIL] Enlace: {reset_url}\n")
+
+
+def _send_via_resend(to_email: str, subject: str, html: str) -> None:
+    payload = json.dumps(
+        {
+            "from": _from_header(),
+            "to": [to_email],
+            "subject": subject,
+            "html": html,
+        }
+    ).encode("utf-8")
+
+    request = urllib.request.Request(
+        RESEND_API_URL,
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+            "Content-Type": "application/json",
+            "User-Agent": "MonitoringInnovation-API/1.0",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            body = response.read().decode("utf-8", errors="replace")
+        logger.info("Correo enviado (Resend) a %s: %s — %s", to_email, subject, body[:120])
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        logger.error("Resend HTTP %s: %s", exc.code, detail)
+        raise
+    except urllib.error.URLError as exc:
+        logger.error("Resend no alcanzable: %s", exc.reason)
+        raise
+
+
+def _send_via_smtp(to_email: str, subject: str, html: str) -> None:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    from_name = settings.SMTP_FROM_NAME or settings.APP_NAME
-    msg["From"] = f"{from_name} <{settings.SMTP_FROM_EMAIL}>"
+    msg["From"] = _from_header()
     msg["To"] = to_email
     msg.attach(MIMEText(html, "html"))
 
-    try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+    if settings.SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(
+            settings.SMTP_HOST, settings.SMTP_PORT, timeout=SMTP_TIMEOUT
+        ) as server:
+            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
+    else:
+        with smtplib.SMTP(
+            settings.SMTP_HOST, settings.SMTP_PORT, timeout=SMTP_TIMEOUT
+        ) as server:
             server.starttls()
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             server.sendmail(settings.SMTP_FROM_EMAIL, to_email, msg.as_string())
-        logger.info("Correo enviado a %s: %s", to_email, subject)
+
+    logger.info("Correo enviado (SMTP) a %s: %s", to_email, subject)
+
+
+def _send_email(to_email: str, subject: str, html: str, *, reset_url: str | None = None) -> bool:
+    if not settings.email_configured:
+        _log_email_fallback(to_email, subject, reset_url)
+        return False
+
+    try:
+        if settings.resend_configured:
+            _send_via_resend(to_email, subject, html)
+        else:
+            _send_via_smtp(to_email, subject, html)
+        return True
+    except OSError as exc:
+        logger.error(
+            "SMTP bloqueado o red inalcanzable (%s). En Railway usa RESEND_API_KEY "
+            "(HTTPS) en lugar de Gmail SMTP.",
+            exc,
+        )
+        _log_email_fallback(to_email, subject, reset_url)
+        return False
     except Exception:
         logger.exception("Error al enviar correo a %s: %s", to_email, subject)
+        _log_email_fallback(to_email, subject, reset_url)
+        return False
 
 
 def send_reset_password_email(to_email: str, reset_token: str) -> None:
     reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
     html = RESET_TEMPLATE % reset_url
-
-    if not _smtp_configured():
-        logger.info("SMTP no configurado — el enlace se habría enviado a %s", to_email)
-        print(f"\n[EMAIL] El enlace de recuperación fue enviado a {to_email}\n")
-        return
-
-    _send_email(to_email, "Recuperación de contraseña — Monitoring Innovation", html)
+    _send_email(
+        to_email,
+        "Recuperación de contraseña — Monitoring Innovation",
+        html,
+        reset_url=reset_url,
+    )
 
 
 def send_password_changed_notification(to_email: str) -> None:

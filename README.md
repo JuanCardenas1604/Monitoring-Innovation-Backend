@@ -195,12 +195,30 @@ En el servicio backend → **Variables**, configura:
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` | Referencia al plugin Postgres |
 | `FRONTEND_URL` | `https://tu-frontend.vercel.app` | URL real del frontend |
 | `CORS_ORIGINS` | Misma URL del frontend | Separar varias con coma |
-| `SMTP_HOST` | `smtp.gmail.com` | Opcional |
-| `SMTP_PORT` | `587` | |
-| `SMTP_USERNAME` | tu@gmail.com | |
-| `SMTP_PASSWORD` | contraseña de aplicación (16 chars) | Sin espacios |
-| `SMTP_FROM_EMAIL` | tu@gmail.com | |
-| `SMTP_FROM_NAME` | `Monitoring` | |
+| `RESEND_API_KEY` | `re_...` | **Correos en Railway** (HTTPS; Gmail SMTP no funciona) |
+| `RESEND_FROM_EMAIL` | `onboarding@resend.dev` o tu dominio verificado | Ver [resend.com](https://resend.com) |
+| `SMTP_FROM_NAME` | `Monitoring Innovation` | Nombre del remitente |
+
+**Correos en Railway (Resend):** Railway bloquea Gmail SMTP. En el panel del servicio backend → **Variables**:
+
+| Variable | Valor ejemplo |
+|----------|----------------|
+| `RESEND_API_KEY` | `re_...` (desde resend.com → API Keys) |
+| `RESEND_FROM_EMAIL` | `onboarding@resend.dev` |
+| `SMTP_FROM_NAME` | `Monitoring Innovation` |
+| `FRONTEND_URL` | `https://monitoringin.netlify.app` |
+
+Quita o deja vacías `SMTP_HOST`, `SMTP_USERNAME`, `SMTP_PASSWORD` en Railway (no se usan).
+
+Prueba tras el deploy:
+
+```bash
+python scripts/test_resend.py juanchotv123@gmail.com
+```
+
+O solicita “olvidé mi contraseña” en el frontend.
+
+**Nota:** con `onboarding@resend.dev`, Resend solo permite enviar al email con el que te registraste en Resend. Para cualquier destinatario, verifica un dominio en Resend.
 
 Generar `SECRET_KEY` en local:
 
@@ -255,7 +273,7 @@ railway run python seed.py
 | BD | SQLite (`monitoring_innovation.db`) | PostgreSQL (plugin) |
 | `SECRET_KEY` | Opcional si `DEBUG=true` | Obligatorio |
 | Datos | Tu `.db` local | Nuevo Postgres; seed en deploy |
-| Correos | SMTP en `.env` o consola | Variables SMTP en Railway |
+| Correos | Gmail SMTP en `.env` | **Resend** (`RESEND_API_KEY`); no uses SMTP en Railway |
 
 ### Archivos de despliegue
 
