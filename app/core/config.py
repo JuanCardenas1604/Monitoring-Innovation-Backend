@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "Monitoring Innovation API"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # Database — SQLite en local; Railway inyecta PostgreSQL vía DATABASE_URL
     DATABASE_URL: str = "sqlite:///./monitoring_innovation.db"
