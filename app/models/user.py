@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, String, Boolean, DateTime, Enum as SAEnum, ForeignKey
-from sqlalchemy.dialects.sqlite import VARCHAR
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -17,11 +16,15 @@ class UserRole(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(VARCHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
     username = Column(String(100), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(SAEnum(UserRole), default=UserRole.VIEWER, nullable=False)
+    role = Column(
+        SAEnum(UserRole, values_callable=lambda x: [e.value for e in x], native_enum=False),
+        default=UserRole.VIEWER,
+        nullable=False,
+    )
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -33,8 +36,8 @@ class User(Base):
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 
-    id = Column(VARCHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(VARCHAR(36), ForeignKey("users.id"), nullable=False, index=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     token_jti = Column(String(255), unique=True, nullable=False, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     used = Column(Boolean, default=False)
@@ -46,8 +49,8 @@ class PasswordResetToken(Base):
 class PasswordHistory(Base):
     __tablename__ = "password_history"
 
-    id = Column(VARCHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(VARCHAR(36), ForeignKey("users.id"), nullable=False, index=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

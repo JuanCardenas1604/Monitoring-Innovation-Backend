@@ -173,10 +173,12 @@ def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session =
 
     send_reset_password_email(to_email=user.email, reset_token=reset_token)
 
-    return {
+    response: dict = {
         "message": "Si el correo está registrado, recibirás un enlace de recuperación",
-        "reset_token": reset_token,
     }
+    if settings.DEBUG:
+        response["reset_token"] = reset_token
+    return response
 
 
 @router.post("/reset-password")

@@ -63,7 +63,7 @@ RESET_TEMPLATE = """\
 
 
 def _smtp_configured() -> bool:
-    return bool(settings.SMTP_HOST and settings.SMTP_USERNAME and settings.SMTP_PASSWORD)
+    return settings.smtp_configured
 
 
 NOTIFICATION_TEMPLATE = """\
