@@ -54,12 +54,17 @@ class Settings(BaseSettings):
             value = value.replace("postgresql://", "postgresql+psycopg://", 1)
         return value
 
+    @field_validator("FRONTEND_URL", mode="after")
+    @classmethod
+    def strip_frontend_url(cls, value: str) -> str:
+        return value.rstrip("/")
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: Any) -> str:
         if value is None or value == "":
             return "*"
-        return str(value)
+        return str(value).strip()
 
     @model_validator(mode="after")
     def ensure_secret_key(self) -> "Settings":

@@ -218,7 +218,11 @@ python scripts/test_resend.py juanchotv123@gmail.com
 
 O solicita “olvidé mi contraseña” en el frontend.
 
-**Nota:** con `onboarding@resend.dev`, Resend solo permite enviar al email con el que te registraste en Resend. Para cualquier destinatario, verifica un dominio en Resend.
+**Modo prueba de Resend (`onboarding@resend.dev`):** solo puedes enviar a **tu email de cuenta Resend** (ej. `juanchotv123@gmail.com`). Si envías a otro (ej. `juandavidcardenasperez372@gmail.com`), Resend responde **403 validation_error** y el correo no sale (la API igual devuelve 200).
+
+**Para todos los usuarios:** en [resend.com/domains](https://resend.com/domains) verifica tu dominio y usa `RESEND_FROM_EMAIL=noreply@tudominio.com`.
+
+**Enlace de reset:** `FRONTEND_URL` sin barra al final (`https://monitoringin.netlify.app`, no `...app/`) para evitar `//reset-password` y que Netlify te mande a la página principal.
 
 Generar `SECRET_KEY` en local:
 

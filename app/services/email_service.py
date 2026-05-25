@@ -194,10 +194,13 @@ def _send_email(to_email: str, subject: str, html: str, *, reset_url: str | None
         else:
             _send_via_smtp(to_email, subject, html)
         return True
+    except urllib.error.HTTPError:
+        # Detalle ya registrado en _send_via_resend (p. ej. 403: solo email de prueba en Resend)
+        _log_email_fallback(to_email, subject, reset_url)
+        return False
     except OSError as exc:
         logger.error(
-            "SMTP bloqueado o red inalcanzable (%s). En Railway usa RESEND_API_KEY "
-            "(HTTPS) en lugar de Gmail SMTP.",
+            "Red inalcanzable al enviar correo (%s). En Railway no uses Gmail SMTP; usa RESEND_API_KEY.",
             exc,
         )
         _log_email_fallback(to_email, subject, reset_url)
@@ -208,8 +211,13 @@ def _send_email(to_email: str, subject: str, html: str, *, reset_url: str | None
         return False
 
 
+def build_reset_password_url(reset_token: str) -> str:
+    base = settings.FRONTEND_URL.rstrip("/")
+    return f"{base}/reset-password?token={reset_token}"
+
+
 def send_reset_password_email(to_email: str, reset_token: str) -> None:
-    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+    reset_url = build_reset_password_url(reset_token)
     html = RESET_TEMPLATE % reset_url
     _send_email(
         to_email,
