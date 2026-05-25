@@ -17,6 +17,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
 app.add_middleware(
@@ -36,11 +37,13 @@ app.include_router(users.router, prefix="/api")
 
 @app.get("/")
 def root():
-    return {
+    payload = {
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "docs": "/docs",
     }
+    if settings.DEBUG:
+        payload["docs"] = "/docs"
+    return payload
 
 
 @app.get("/health")

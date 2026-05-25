@@ -8,7 +8,7 @@ LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def setup_logging(debug: bool = True) -> None:
+def setup_logging(debug: bool = False) -> None:
     """Configura consola + archivo para todo el paquete `app`."""
     app_logger = logging.getLogger("app")
     if app_logger.handlers:

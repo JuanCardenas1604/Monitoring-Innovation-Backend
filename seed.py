@@ -107,11 +107,11 @@ def seed():
             admin = User(
                 email="admin@monitoringinnovation.com",
                 username="admin",
-                hashed_password=hash_password("admin123"),
+                hashed_password=hash_password("Admin123!"),
                 role=UserRole.ADMIN,
             )
             db.add(admin)
-            print("[OK] Usuario admin creado (admin / admin123)")
+            print("[OK] Usuario admin creado (Admin123!)")
         else:
             print("[SKIP] Usuario admin ya existe")
 
@@ -120,11 +120,11 @@ def seed():
             viewer = User(
                 email="viewer@monitoringinnovation.com",
                 username="viewer",
-                hashed_password=hash_password("viewer123"),
+                hashed_password=hash_password("Viewer123!"),
                 role=UserRole.VIEWER,
             )
             db.add(viewer)
-            print("[OK] Usuario viewer creado (viewer / viewer123)")
+            print("[OK] Usuario viewer creado (Viewer123!)")
         else:
             print("[SKIP] Usuario viewer ya existe")
 

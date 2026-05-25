@@ -49,7 +49,8 @@ uvicorn app.main:app --reload
 ```
 
 La API estará disponible en `http://localhost:8000`.
-Documentación Swagger: `http://localhost:8000/docs`.
+
+Por defecto `DEBUG=False` (sin `/docs` ni `/openapi.json`). Para Swagger en local, en `.env` pon `DEBUG=True` y reinicia el servidor; entonces: `http://localhost:8000/docs`.
 
 ---
 
@@ -59,8 +60,8 @@ Al ejecutar `python seed.py` se crean:
 
 | Usuario  | Credenciales       | Rol   |
 |----------|--------------------|-------|
-| admin    | admin / admin123   | Admin |
-| viewer   | viewer / viewer123 | Viewer |
+| admin    | admin / Admin123!   | Admin |
+| viewer   | viewer / Viewer123! | Viewer |
 
 Además se crean 10 vehículos de ejemplo con distintas marcas, localidades y precios.
 
